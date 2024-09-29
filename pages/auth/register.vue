@@ -3,7 +3,7 @@
     <div class="row justify-content-center my-4">
       <div class="col-md-4">
         <div v-if="errors.length > 0" class="alert alert-danger" role="alert">
-          <ul class="mb0">
+          <ul class="mb-0">
             <li v-for="(error, index) in errors" :key="index">
               {{ error }}
             </li>
@@ -67,6 +67,10 @@ definePageMeta({
   middleware: `guest`,
 });
 
+const {
+  public: { apiBase },
+} = useRuntimeConfig();
+
 import { useToast } from 'vue-toastification';
 const { authUser } = useAuth();
 const errors = ref([]);
@@ -81,18 +85,30 @@ const formData = reactive({
 });
 
 async function registerFn() {
-  loading.value = true;
+  await $fetch(`${apiBase}/sanctum/csrf-cookie`, {
+    credentials: `include`,
+  });
+
+  const XSRF_TOKEN = useCookie(`XSRF-TOKEN`);
+
   try {
-    const user = await $fetch(`/api/auth/register`, {
+    loading.value = true;
+    const data = await $fetch(`${apiBase}/register`, {
       method: `POST`,
       body: formData,
+      credentials: `include`,
+      headers: {
+        Accept: 'application/json',
+        'X-XSRF-TOKEN': XSRF_TOKEN.value,
+      },
     });
 
-    authUser.value = user;
+    authUser.value = data.user;
     toast.success(`You are registered !`);
     return navigateTo(`/`);
   } catch (error) {
-    errors.value = Object.values(error.data.data).flat();
+    errors.value = Object.values(error.data).flat();
+    console.error(error.data);
   } finally {
     loading.value = false;
   }

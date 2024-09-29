@@ -33,7 +33,7 @@
         </ul>
       </div>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0" >
           <div class="d-flex" v-if="authUser">
             <li class="nav-item">
               <NuxtLink
@@ -72,13 +72,21 @@
 import { useToast } from 'vue-toastification';
 const { authUser } = useAuth();
 const toast = useToast();
+const {
+  public: { apiBase },
+} = useRuntimeConfig();
 
 async function logoutFn() {
-  const headers = useRequestHeaders([`cookie`]);
+  const XSRF_TOKEN = useCookie(`XSRF-TOKEN`);
+  // const headers = useRequestHeaders([`cookie`]);
 
-  await useFetch(`/api/auth/logout`, {
+  await useFetch(`${apiBase}/logout`, {
     method: `POST`,
-    headers,
+    credentials: `include`,
+      headers: {
+        Accept: 'application/json',
+        'X-XSRF-TOKEN': XSRF_TOKEN.value,
+      },
   });
 
   authUser.value = null;
@@ -86,4 +94,6 @@ async function logoutFn() {
   return navigateTo(`/`);
 }
 </script>
-<style></style>
+<style scoped>
+
+</style>
